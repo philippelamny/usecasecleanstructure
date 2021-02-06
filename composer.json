@@ -1,0 +1,19 @@
+{
+    "name": "vietanywhere/usecasecleanstructure",
+    "description": "Console with utils for clean archi (ex: generate all the class respecting clean architecture for a usecase and subdomain)",
+    "require": {
+        "symfony/console": "^5.2",
+        "php":">7"
+    },
+    "authors": [
+        {
+            "name": "philippe lam",
+            "email": "philippe.lam.ny@gmail.com"
+        }
+    ],
+	"autoload-dev": {
+        "psr-4": {
+            "Vietanywhere\\UseCase\\CreateCleanStructure\\": "lib/"
+        }
+    }
+}

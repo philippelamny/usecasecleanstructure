@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  servicephp:
+    build:
+      context: ./docker
+      dockerfile: DockerFile
+    volumes:
+      - ./:/var/www/html/:cached
