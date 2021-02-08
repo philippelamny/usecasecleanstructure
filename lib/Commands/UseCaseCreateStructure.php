@@ -18,15 +18,19 @@ class UseCaseCreateStructure extends SymfonyCommand
         $this->setName('usecase:create:structure');
         $this->setDescription('Create all the files related to the creation of a new usecase (usecase, presenter)');
 
+        // @review les "shortcut" ne doivent doivent comporter qu'une seule lettre pour que cela fonctionne
         $this->addOption('core-path', 'cp', InputOption::VALUE_OPTIONAL, 'path of your core where the domain will be created');
         $this->addOption('prefix-namespace', 'pn', InputOption::VALUE_OPTIONAL, 'Prefix of the namespace of the Domaine');
     }
 
+    // @review les attributs devraient être fortement typés
     private $input;
     private $ouput;
     private $basepath;
     private $prefixNamespace;
 
+
+    // @review si les constantes ne sont utiles que dans cette classe alors elles devraient être marquée comme "private"
     const __STRUCTURE__DIR_DOMAIN= 'Domains';
     const __STRUCTURE__DIR_SUB_DOMAIN_NAME = 'SubDomains';
     const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_NAME = 'UseCase';
@@ -41,6 +45,7 @@ class UseCaseCreateStructure extends SymfonyCommand
     const __STRUCTURE__BASE_PATH = '';
 
     /**
+     * @review cette fonction n'est jamais utilisée
      * Obtenir la liste de dossiers existants
      * @param string $fromRelative
      * @return array
@@ -59,6 +64,7 @@ class UseCaseCreateStructure extends SymfonyCommand
     }
 
     /**
+     * @review la méthode Tools::createFileFromContent va s'occuper de créer l'arborescence des dossier lorsque tu génère une classe. Tu n'as donc pas besoin de gérer l'arborescence des dossier dans cette commande.
      * @param $domainPathRelative
      */
     private function createDirectory($domainPathRelative)
@@ -108,7 +114,7 @@ class UseCaseCreateStructure extends SymfonyCommand
         $fileName = $fileName . '.php';
         if (!file_exists($dir . '/'. $fileName)) {
             Tools::createFileFromContent($content, $fileName, $dir);
-            echo "Creation nouvelle class : {$fileName}\n";
+            echo "Creation nouvelle class : {$fileName}\n"; //@review il faudrait utilise l'output fournie par la Command parente
         }
         echo "Class {$dir}/{$fileName} : ok \n";
         return $fileName;
@@ -189,6 +195,7 @@ class UseCaseCreateStructure extends SymfonyCommand
 
         // Creation des class Presentation
         $PresenterContratcClass = $this->generateUseCasePresentationPresenterContratcClass($useCaseName, $pathRelativeUsecasePresentation, $UseCaseOutputClass);
+
         $VueViewModelClass = $this->generateUseCasePresentationVueViewModelClass($useCaseName, $pathRelativeUsecasePresentation, $ViewModelClass);
         $VuePresenterClass = $this->generateUseCasePresentationVuePresenterClass($useCaseName, $pathRelativeUsecasePresentation, $PresenterContratcClass, $VueViewModelClass, $UseCaseOutputClass, $ViewModelFactoryClass);
 
@@ -199,6 +206,7 @@ class UseCaseCreateStructure extends SymfonyCommand
 
 
     /**
+     * @review Le code de cette méthode est dupliqué avec le code de la méthode generateUseCasePresentationPresenterViewModelClass
      * @param string $useCaseName
      * @param string $pathRelative
      * @return array
@@ -253,6 +261,14 @@ EOD;
     private function generateUseCasePresentationPresenterViewModelFactoryClass(string $useCaseName, string $pathRelative, array $ModelClass, array $ViewModelClass) : array
     {
         $fileName = $useCaseName . 'ViewModelFactory';
+        /**
+         * @review il serait plus lisible de stocker la valeur de $content dans un fichier séparé.
+         * on pourrait imaginer avoir un dossier lib/templates contenant un fichier pour chaque template manipulé par ta classe
+         * cela est applicable aux autres templates
+         * exemple :
+         * fichier lib/templates/ViewModelFactory.php.template contenant le template
+         * et ici : $content = file_get_contents(__DIR__ . "/../templates/ViewModelFactory.php.template");
+         */
         $content = <<<EOF
 <?php
 
@@ -306,6 +322,8 @@ EOD;
     }
 
     /**
+     * @review toutes les méthodes relatives à la génération de classes à partir d'un template devrait être regroupée dans une classe PhpClassFactory permettant ainsi d'isoler et séparer les responsabilité de ta commande
+     *
      * @param string $useCaseName
      * @param string $pathRelative
      * @param $PresenterContratcClass
@@ -384,6 +402,7 @@ EOD;
     }
 
     /**
+     * @review cette méthode expose beaucoup trop de paramètre, c'est un signe qu'il est possible d'extraire une classe portant cette responsabilité
      * @param string $useCaseName
      * @param string $pathRelative
      * @param $UseCaseInputClass
