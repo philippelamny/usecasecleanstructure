@@ -48,7 +48,6 @@ class UseCaseCreateStructure extends SymfonyCommand
     private const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_MODEL_NAME = 'Model';
 
     /**
-     * @review cette fonction n'est jamais utilisée
      * Obtenir la liste de dossiers existants
      * @param string $fromRelative
      * @return array
@@ -56,10 +55,13 @@ class UseCaseCreateStructure extends SymfonyCommand
     private function ListeExistante(string $fromRelative) : array
     {
         $result = [];
-        $liste_rep = scandir($this->getFromDirRootWWW($fromRelative));
-        foreach ($liste_rep as $rep) {
-            if (!in_array($rep, ['.', '..'])) {
-                $result[] = $rep;
+        $dir = $this->getFromDirRootWWW($fromRelative);
+        if (is_dir($dir)) {
+            $liste_rep = scandir($dir);
+            foreach ($liste_rep as $rep) {
+                if (!in_array($rep, ['.', '..'])) {
+                    $result[] = $rep;
+                }
             }
         }
 
@@ -68,6 +70,7 @@ class UseCaseCreateStructure extends SymfonyCommand
 
     /**
      * @review la méthode Tools::createFileFromContent va s'occuper de créer l'arborescence des dossier lorsque tu génère une classe. Tu n'as donc pas besoin de gérer l'arborescence des dossier dans cette commande.
+     *
      * @param $domainPathRelative
      */
     private function createDirectory($domainPathRelative)
@@ -205,7 +208,6 @@ class UseCaseCreateStructure extends SymfonyCommand
         // Creation des class Usecase
         $UseCaseClass = $this->generateUseCaseClass($useCaseName, $pathRelativeUsecase, $UseCaseInputClass, $UseCaseOutputClass, $PresenterContratcClass, $ModelClass);
     }
-
 
 
     /**
@@ -602,7 +604,7 @@ EOD;
     /**
      * @param string $question
      * @param array $choices
-     * @return array
+     * @return string|null
      */
     private function anticipate(string $question, array $choices) {
 
