@@ -18,31 +18,34 @@ class UseCaseCreateStructure extends SymfonyCommand
         $this->setName('usecase:create:structure');
         $this->setDescription('Create all the files related to the creation of a new usecase (usecase, presenter)');
 
-        // @review les "shortcut" ne doivent doivent comporter qu'une seule lettre pour que cela fonctionne
-        $this->addOption('core-path', 'cp', InputOption::VALUE_OPTIONAL, 'path of your core where the domain will be created');
-        $this->addOption('prefix-namespace', 'pn', InputOption::VALUE_OPTIONAL, 'Prefix of the namespace of the Domaine');
+        $this->addOption('core-path', 'c', InputOption::VALUE_OPTIONAL, 'path of your core where the domain will be created');
+        $this->addOption('prefix-namespace', 'p', InputOption::VALUE_OPTIONAL, 'Prefix of the namespace of the Domaine');
     }
 
-    // @review les attributs devraient être fortement typés
+    // Typage à partir de 7.3
+    /** @var  InputInterface */
     private $input;
+
+    /** @var OutputInterface */
     private $ouput;
+
+    /** @var string */
     private $basepath;
+
+    /** @var string */
     private $prefixNamespace;
 
 
-    // @review si les constantes ne sont utiles que dans cette classe alors elles devraient être marquée comme "private"
-    const __STRUCTURE__DIR_DOMAIN= 'Domains';
-    const __STRUCTURE__DIR_SUB_DOMAIN_NAME = 'SubDomains';
-    const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_NAME = 'UseCase';
+    private const __STRUCTURE__DIR_DOMAIN= 'Domains';
+    private const __STRUCTURE__DIR_SUB_DOMAIN_NAME = 'SubDomains';
+    private const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_NAME = 'UseCase';
 
-    const __STRUCTURE__DOMAIN_STRUCTURE_DIR = ['Entity', 'Model'];
-    const __STRUCTURE__SUB_DOMAIN_STRUCTURE_DIR = ['_ViewModel', 'Model'];
+    private const __STRUCTURE__DOMAIN_STRUCTURE_DIR = ['Entity', 'Model'];
+    private const __STRUCTURE__SUB_DOMAIN_STRUCTURE_DIR = ['_ViewModel', 'Model'];
 
-    const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_PRESENTATION_NAME = 'Presentation';
-    const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_PRESENTATION_VIEWMODEL_NAME = '_ViewModel';
-    const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_MODEL_NAME = 'Model';
-
-    const __STRUCTURE__BASE_PATH = '';
+    private const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_PRESENTATION_NAME = 'Presentation';
+    private const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_PRESENTATION_VIEWMODEL_NAME = '_ViewModel';
+    private const __STRUCTURE__DIR_SUB_DOMAIN_USECASE_MODEL_NAME = 'Model';
 
     /**
      * @review cette fonction n'est jamais utilisée
@@ -53,7 +56,7 @@ class UseCaseCreateStructure extends SymfonyCommand
     private function ListeExistante(string $fromRelative) : array
     {
         $result = [];
-        $liste_rep = scandir($this->getFromDirRootWWW(static::__STRUCTURE__DIR_DOMAIN . '/' . $fromRelative));
+        $liste_rep = scandir($this->getFromDirRootWWW($fromRelative));
         foreach ($liste_rep as $rep) {
             if (!in_array($rep, ['.', '..'])) {
                 $result[] = $rep;
@@ -564,9 +567,9 @@ EOD;
 
         $this->createDirectory(static::__STRUCTURE__DIR_DOMAIN);
 
-        //$domainesExistants = $this->ListeExistante('');
+        $domainesExistants = $this->ListeExistante(static::__STRUCTURE__DIR_DOMAIN);
         // Gestion du domaine
-        $domain = $this->anticipate('Domaine ? (vide pour arreter)', []);
+        $domain = $this->anticipate('Domaine ? (vide pour arreter) : ', $domainesExistants);
         $domain = ucfirst($domain);
         $domainPathRelative = static::__STRUCTURE__DIR_DOMAIN . '/' . $domain;
         if (empty($domain)) {
@@ -574,8 +577,8 @@ EOD;
         }
         $this->generateStructureDomain($domainPathRelative);
 
-
-        $subDomain = $this->anticipate('Sub-Domaine ? (vide pour arreter)', []);
+        $SubdomainesExistants = $this->ListeExistante($domainPathRelative . '/' . static::__STRUCTURE__DIR_SUB_DOMAIN_NAME);
+        $subDomain = $this->anticipate('Sous-Domaine ? (vide pour arreter) : ', $SubdomainesExistants);
         $subDomain = ucfirst($subDomain);
         $subDomainPathRelative = $domainPathRelative . '/' . static::__STRUCTURE__DIR_SUB_DOMAIN_NAME . '/' . $subDomain;
         if (empty($subDomain)) {
@@ -584,7 +587,7 @@ EOD;
         $this->generateStructureSubDomain($subDomainPathRelative);
 
         do {
-            $useCase = $this->anticipate('use case ? (vide pour arreter)', []);
+            $useCase = $this->anticipate('Use-Case ? (vide pour arreter) : ', []);
             if (empty($useCase)) {
                 return 0;
             }
@@ -602,11 +605,11 @@ EOD;
      * @return array
      */
     private function anticipate(string $question, array $choices) {
+
+        // TODO : Gestion de l'autocomplétion $choices
         $helper = $this->getHelper('question');
         $question = new Question($question);
-
         $answer = $helper->ask($this->input, $this->ouput, $question);
-
         return $answer;
     }
 
