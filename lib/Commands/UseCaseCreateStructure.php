@@ -121,9 +121,9 @@ class UseCaseCreateStructure extends SymfonyCommand
         $fileName = $fileName . '.php';
         if (!file_exists($dir . '/'. $fileName)) {
             Tools::createFileFromContent($content, $fileName, $dir);
-            echo "Creation nouvelle class : {$fileName}\n"; //@review il faudrait utilise l'output fournie par la Command parente
+            $this->ouput->write("Creation nouvelle class : {$fileName}", true);
         }
-        echo "Class {$dir}/{$fileName} : ok \n";
+        $this->ouput->write("Class {$dir}/{$fileName} : ok", true);
         return $fileName;
     }
 
