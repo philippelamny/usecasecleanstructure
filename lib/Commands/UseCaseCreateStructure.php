@@ -9,7 +9,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Vietanywhere\UseCase\CreateCleanStructure\Helpers\Tools;
 use Vietanywhere\UseCase\CreateCleanStructure\Templates\TemplateBuilder;
-use Vietanywhere\UseCase\CreateCleanStructure\Templates\TemplateFactory;
 
 class UseCaseCreateStructure extends SymfonyCommand
 {
