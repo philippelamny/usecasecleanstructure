@@ -8,6 +8,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Vietanywhere\UseCase\CreateCleanStructure\Helpers\Tools;
+use Vietanywhere\UseCase\CreateCleanStructure\Templates\TemplateBuilder;
+use Vietanywhere\UseCase\CreateCleanStructure\Templates\TemplateFactory;
 
 class UseCaseCreateStructure extends SymfonyCommand
 {
@@ -22,7 +24,7 @@ class UseCaseCreateStructure extends SymfonyCommand
         $this->addOption('prefix-namespace', 'p', InputOption::VALUE_OPTIONAL, 'Prefix of the namespace of the Domaine');
     }
 
-    // Typage à partir de 7.3
+    // Typage à partir de 7.4
     /** @var  InputInterface */
     private $input;
 
@@ -70,6 +72,7 @@ class UseCaseCreateStructure extends SymfonyCommand
 
     /**
      * @review la méthode Tools::createFileFromContent va s'occuper de créer l'arborescence des dossier lorsque tu génère une classe. Tu n'as donc pas besoin de gérer l'arborescence des dossier dans cette commande.
+     * C'est pour générer les répertoires communes aux domaines/sous-domaine.
      *
      * @param $domainPathRelative
      */
@@ -87,7 +90,6 @@ class UseCaseCreateStructure extends SymfonyCommand
      */
     private function generateStructureDomain(string $domainPathRelative)
     {
-
         $this->createDirectory($domainPathRelative);
         $this->createDirectory($domainPathRelative . '/' . static::__STRUCTURE__DIR_SUB_DOMAIN_NAME);
         foreach (static::__STRUCTURE__DOMAIN_STRUCTURE_DIR as $dir) {
@@ -128,32 +130,25 @@ class UseCaseCreateStructure extends SymfonyCommand
 
     /**
      * @param $content
-     * @param $fileName
+     * @param $className
      * @param $pathRelative
-     * @param array $ModelClass
-     * @param array $ViewModelClass
-     * @param array $UseCaseOutputClass
-     * @param array $PresenterContratcClass
-     * @param array $VueViewModelClass
-     * @param array $ViewModelFactoryClass
-     * @param array $UseCaseInputClass
      * @return array
      */
-    private function writeClassPhpBase($content, $fileName, $pathRelative, $ModelClass = [], $ViewModelClass = [], $UseCaseOutputClass = [], $PresenterContratcClass = [], $VueViewModelClass = [], $ViewModelFactoryClass = [], $UseCaseInputClass = []) : array
+    private function writeClassPhpBase($content, $className, $pathRelative) : array
     {
         $dir = $this->getFromDirRootWWW($pathRelative);
         $namespace = ucfirst($pathRelative);
         $content = str_replace('%%namespace%%',  Tools::transformPathToNamespace($this->prefixNamespace . $namespace), $content);
-        $content = str_replace('%%ClassName%%', $fileName, $content);
+        $content = str_replace('%%ClassName%%', $className, $content);
 
         foreach ([
-                     'ModelClass' => $ModelClass,
-                     'ViewModelClass' => $ViewModelClass,
-                     'UseCaseOutputClass' => $UseCaseOutputClass,
-                     'PresenterContratcClass' => $PresenterContratcClass,
-                     'VueViewModelClass' => $VueViewModelClass,
-                     'ViewModelFactoryClass' => $ViewModelFactoryClass,
-                     'UseCaseInputClass' => $UseCaseInputClass
+                     'ModelClass' => $this->ModelClass,
+                     'ViewModelClass' => $this->ViewModelClass,
+                     'UseCaseOutputClass' => $this->UseCaseOutputClass,
+                     'PresenterContratcClass' => $this->PresenterContratcClass,
+                     'VueViewModelClass' => $this->VueViewModelClass,
+                     'ViewModelFactoryClass' => $this->ViewModelFactoryClass,
+                     'UseCaseInputClass' => $this->UseCaseInputClass
                  ]
         as $name => $item
         ) {
@@ -164,15 +159,25 @@ class UseCaseCreateStructure extends SymfonyCommand
             }
         }
 
-        static::createFileIfNotExists($content, $fileName, $dir);
-        return ['namespace' => $namespace, 'className' => $fileName];
+        static::createFileIfNotExists($content, $className, $dir);
+        return ['namespace' => $namespace, 'className' => $className];
     }
 
+    private $ModelClass = null;
+    private $UseCaseInputClass = null;
+    private $UseCaseOutputClass = null;
+    private $ViewModelClass = null;
+    private $ViewModelFactoryClass = null;
+    private $PresenterContratcClass = null;
+    private $VueViewModelClass = null;
+    private $VuePresenterClass = null;
+    private $UseCaseClass = null;
+
+
     /**
-     * Creation des dossiers/class ncessaires au use case du sub domaine
-     *
      * @param string $pathRelativeUsecase
      * @param string $useCaseName
+     * @throws \Exception
      */
     private function generateStructureSubDomainUseCase(string $pathRelativeUsecase, string $useCaseName)
     {
@@ -190,348 +195,33 @@ class UseCaseCreateStructure extends SymfonyCommand
         $this->createDirectory($pathRelativeUsecasePresentationViewModel);
 
 
-        $ModelClass = $this->generateUseCaseModelClass($useCaseName, $pathRelativeUsecaseModel);
-
-        $UseCaseInputClass = $this->generateUseCaseInputClass($useCaseName, $pathRelativeUsecase);
-        $UseCaseOutputClass = $this->generateUseCaseOutputClass($useCaseName, $pathRelativeUsecase, $ModelClass);
-
-        // Creation des class viewmodel
-        $ViewModelClass = $this->generateUseCasePresentationPresenterViewModelClass($useCaseName, $pathRelativeUsecasePresentationViewModel);
-        $ViewModelFactoryClass = $this->generateUseCasePresentationPresenterViewModelFactoryClass($useCaseName, $pathRelativeUsecasePresentationViewModel, $ModelClass, $ViewModelClass);
-
-        // Creation des class Presentation
-        $PresenterContratcClass = $this->generateUseCasePresentationPresenterContratcClass($useCaseName, $pathRelativeUsecasePresentation, $UseCaseOutputClass);
-
-        $VueViewModelClass = $this->generateUseCasePresentationVueViewModelClass($useCaseName, $pathRelativeUsecasePresentation, $ViewModelClass);
-        $VuePresenterClass = $this->generateUseCasePresentationVuePresenterClass($useCaseName, $pathRelativeUsecasePresentation, $PresenterContratcClass, $VueViewModelClass, $UseCaseOutputClass, $ViewModelFactoryClass);
-
-        // Creation des class Usecase
-        $UseCaseClass = $this->generateUseCaseClass($useCaseName, $pathRelativeUsecase, $UseCaseInputClass, $UseCaseOutputClass, $PresenterContratcClass, $ModelClass);
+        $this->ModelClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_MODEL__, $useCaseName, $pathRelativeUsecaseModel);
+        $this->UseCaseInputClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_INPUT__, $useCaseName, $pathRelativeUsecase);
+        $this->UseCaseOutputClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_OUTPUT__, $useCaseName, $pathRelativeUsecase);
+        $this->ViewModelClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_PRESENTATION_PRESENTER_VIEW_MODEL__, $useCaseName, $pathRelativeUsecasePresentationViewModel);
+        $this->ViewModelFactoryClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_PRESENTATION_PRENSENTER_VLEW_MODEL_FACTORY__, $useCaseName, $pathRelativeUsecasePresentationViewModel);
+        $this->PresenterContratcClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_PRESENTATION_PRESENTER_CONTRAT__ ,$useCaseName, $pathRelativeUsecasePresentation);
+        $this->VueViewModelClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_PRESENTATION_VUE_VIEW_MODEL__, $useCaseName, $pathRelativeUsecasePresentation);
+        $this->VuePresenterClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE_PRESENTATION_VUE_PRESENTER__, $useCaseName, $pathRelativeUsecasePresentation);
+        $this->UseCaseClass = $this->generateUseCaseClassTemplate(TemplateBuilder::__USE_CASE__, $useCaseName, $pathRelativeUsecase);
     }
 
 
     /**
-     * @review Le code de cette méthode est dupliqué avec le code de la méthode generateUseCasePresentationPresenterViewModelClass
+     * @param array $template
      * @param string $useCaseName
      * @param string $pathRelative
      * @return array
+     * @throws \Exception
      */
-    private function generateUseCaseModelClass(string $useCaseName, string $pathRelative) : array
-    {
-        $fileName = $useCaseName . 'Model' ;
+    private function generateUseCaseClassTemplate(array $template, string $useCaseName, string $pathRelative) : array {
+        $data = TemplateBuilder::buildTemplateClass($template, $useCaseName);
 
-        $content = <<<EOD
-<?php
+        if (empty($data)) {
+            throw new \Exception("Template manquante !");
+        }
 
-namespace %%namespace%%;
-
-class %%ClassName%%
-{
-
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative);
-    }
-
-    /**
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @return array
-     */
-    private function generateUseCasePresentationPresenterViewModelClass(string $useCaseName, string $pathRelative) : array
-    {
-        $fileName = $useCaseName . 'ViewModel' ;
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-class %%ClassName%%
-{
-
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative);
-    }
-
-    /**
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @param array $ModelClass
-     * @param array $ViewModelClass
-     * @return array
-     */
-    private function generateUseCasePresentationPresenterViewModelFactoryClass(string $useCaseName, string $pathRelative, array $ModelClass, array $ViewModelClass) : array
-    {
-        $fileName = $useCaseName . 'ViewModelFactory';
-        /**
-         * @review il serait plus lisible de stocker la valeur de $content dans un fichier séparé.
-         * on pourrait imaginer avoir un dossier lib/templates contenant un fichier pour chaque template manipulé par ta classe
-         * cela est applicable aux autres templates
-         * exemple :
-         * fichier lib/templates/ViewModelFactory.php.template contenant le template
-         * et ici : $content = file_get_contents(__DIR__ . "/../templates/ViewModelFactory.php.template");
-         */
-        $content = <<<EOF
-<?php
-
-namespace %%namespace%%;
-
-use %%ModelClassNamespaceUse%%;
-
-class %%ClassName%%
-{
-   /**
-     * @param %%ModelClassName%% \$model
-     *
-     * @return %%ViewModelClassName%%
-     */
-    public static function getViewModel(%%ModelClassName%% \$model): %%ViewModelClassName%%
-    {
-        \$viewModel = new %%ViewModelClassName%%();
-
-        return \$viewModel;
-    }
-}
-EOF;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative, $ModelClass, $ViewModelClass);
-    }
-
-    /**
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @param $UseCaseOutputClass
-     * @return array
-     */
-    private function generateUseCasePresentationPresenterContratcClass(string $useCaseName, string $pathRelative, $UseCaseOutputClass) : array
-    {
-        $fileName = $useCaseName . 'PresenterContract';
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-use %%UseCaseOutputClassNamespaceUse%%;
-
-interface %%ClassName%%
-{
-
-    public function present(%%UseCaseOutputClassName%% \$output): void;
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative, null, null, $UseCaseOutputClass);
-    }
-
-    /**
-     * @review toutes les méthodes relatives à la génération de classes à partir d'un template devrait être regroupée dans une classe PhpClassFactory permettant ainsi d'isoler et séparer les responsabilité de ta commande
-     *
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @param $PresenterContratcClass
-     * @param $VueViewModelClass
-     * @param $UseCaseOutputClass
-     * @param $ViewModelFactoryClass
-     * @return array
-     */
-    private function generateUseCasePresentationVuePresenterClass(string $useCaseName, string $pathRelative, $PresenterContratcClass, $VueViewModelClass, $UseCaseOutputClass, $ViewModelFactoryClass) : array
-    {
-        $fileName = $useCaseName . 'VuePresenter';
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-use %%UseCaseOutputClassNamespaceUse%%;
-use %%ViewModelFactoryClassNamespaceUse%%;
-
-class %%ClassName%% implements %%PresenterContratcClassName%%
-{
-
-    private \$viewModel;
-
-    /**
-     * @param %%UseCaseOutputClassName%% \$output
-     */
-    public function present(%%UseCaseOutputClassName%% \$output): void
-    {
-        \$model = \$output->getModel();
-
-        \$this->viewModel = new %%VueViewModelClassName%%();
-
-        \$this->viewModel->viewModel = %%ViewModelFactoryClassName%%::getViewModel(\$model);
-    }
-
-    /**
-     * @return %%VueViewModelClassName%%
-     */
-    public function getViewModel(): %%VueViewModelClassName%%
-    {
-        return \$this->viewModel;
-    }
-
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative, null, null, $UseCaseOutputClass, $PresenterContratcClass, $VueViewModelClass, $ViewModelFactoryClass);
-    }
-
-    /**
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @param $ViewModelClass
-     * @return array
-     */
-    private function generateUseCasePresentationVueViewModelClass(string $useCaseName, string $pathRelative, $ViewModelClass) : array
-    {
-        $fileName = $useCaseName . 'VueViewModel';
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-use %%ViewModelClassNamespaceUse%%;
-
-class %%ClassName%%
-{
-    /** @var %%ViewModelClassName%% */
-    public \$viewModel;
-
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative, null, $ViewModelClass);
-    }
-
-    /**
-     * @review cette méthode expose beaucoup trop de paramètre, c'est un signe qu'il est possible d'extraire une classe portant cette responsabilité
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @param $UseCaseInputClass
-     * @param $UseCaseOutputClass
-     * @param $PresenterContratcClass
-     * @param $ModelClass
-     * @return array
-     */
-    private function generateUseCaseClass(string $useCaseName, string $pathRelative, $UseCaseInputClass, $UseCaseOutputClass, $PresenterContratcClass, $ModelClass) : array
-    {
-        $fileName = $useCaseName;
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-use %%PresenterContratcClassNamespaceUse%%;
-use %%ModelClassNamespaceUse%%;
-
-class %%ClassName%%
-{
-
-    /** @var %%UseCaseOutputClassName%% */
-    private \$output;
-
-    /**
-     * Gestion des Repositories en param avec l'autowire
-     */
-    public function __construct()
-    {
-    }
-    
-    /**
-     * @param %%UseCaseInputClassName%%      \$input
-     * @param %%PresenterContratcClassName%% \$presenter
-     */
-    public function execute(%%UseCaseInputClassName%% \$input, %%PresenterContratcClassName%% \$presenter): void
-    {
-        \$this->output = new %%UseCaseOutputClassName%%();
-
-        \$this->output->setModel(new %%ModelClassName%%());
-
-        \$presenter->present(\$this->output);
-    }
-    
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative, $ModelClass, null, $UseCaseOutputClass, $PresenterContratcClass, null, null, $UseCaseInputClass);
-    }
-
-    /**
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @return array
-     */
-    private function generateUseCaseInputClass(string $useCaseName, string $pathRelative) : array
-    {
-        $fileName = $useCaseName .'Input';
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-class %%ClassName%%
-{
-
-    public function __construct()
-    {
-    }
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative);
-    }
-
-    /**
-     * @param string $useCaseName
-     * @param string $pathRelative
-     * @param $ModelClass
-     * @return array
-     */
-    private function generateUseCaseOutputClass(string $useCaseName, string $pathRelative, $ModelClass) : array
-    {
-        $fileName = $useCaseName . 'Output';
-        $content = <<<EOD
-<?php
-
-namespace %%namespace%%;
-
-use %%ModelClassNamespaceUse%%;
-
-class %%ClassName%%
-{
-    
-    /**
-     * @var %%ModelClassName%%
-     */
-    private \$model= null;
-
-    /**
-     * @param %%ModelClassName%% \$model
-     *
-     * @return \$this
-     */
-    public function setModel(%%ModelClassName%% \$model): %%ClassName%%
-    {
-        \$this->model = \$model;
-
-        return \$this;
-    }
-
-    /**
-     * @return %%ModelClassName%%
-     */
-    public function getModel(): %%ModelClassName%%
-    {
-        return \$this->model;
-    }
-
-}
-EOD;
-
-        return $this->writeClassPhpBase($content, $fileName, $pathRelative, $ModelClass);
+        return $this->writeClassPhpBase($data['content'], $data['className'], $pathRelative);
     }
 
     /**
@@ -551,11 +241,10 @@ EOD;
     }
 
     /**
-     * Execute the console command.
-     *
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return mixed
+     * @return int
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {

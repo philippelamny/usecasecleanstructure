@@ -1,0 +1,35 @@
+<?php
+
+namespace %%namespace%%;
+
+use %%ModelClassNamespaceUse%%;
+
+class %%ClassName%%
+{
+
+    /**
+     * @var %%ModelClassName%%
+     */
+    private $model = null;
+
+    /**
+     * @param %%ModelClassName%% $model
+     *
+     * @return $this
+     */
+    public function setModel(%%ModelClassName%% $model): %%ClassName%%
+    {
+        $this->model = $model;
+
+        return $this;
+    }
+
+    /**
+     * @return %%ModelClassName%%
+     */
+    public function getModel(): %%ModelClassName%%
+    {
+        return $this->model;
+    }
+
+}

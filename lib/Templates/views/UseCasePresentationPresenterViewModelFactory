@@ -1,0 +1,20 @@
+<?php
+
+namespace %%namespace%%;
+
+use %%ModelClassNamespaceUse%%;
+
+class %%ClassName%%
+{
+   /**
+     * @param %%ModelClassName%% $model
+     *
+     * @return %%ViewModelClassName%%
+     */
+    public static function getViewModel(%%ModelClassName%% $model): %%ViewModelClassName%%
+    {
+        $viewModel = new %%ViewModelClassName%%();
+
+        return $viewModel;
+    }
+}

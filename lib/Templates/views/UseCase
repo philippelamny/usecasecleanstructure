@@ -1,0 +1,34 @@
+<?php
+
+namespace %%namespace%%;
+
+use %%PresenterContratcClassNamespaceUse%%;
+use %%ModelClassNamespaceUse%%;
+
+class %%ClassName%%
+{
+
+    /** @var %%UseCaseOutputClassName%% */
+    private $output;
+
+    /**
+     * Gestion des Repositories en param avec l'autowire
+     */
+    public function __construct()
+    {
+    }
+
+    /**
+     * @param %%UseCaseInputClassName%%      $input
+     * @param %%PresenterContratcClassName%% $presenter
+     */
+    public function execute(%%UseCaseInputClassName%% $input, %%PresenterContratcClassName%% $presenter): void
+    {
+        $this->output = new %%UseCaseOutputClassName%%();
+
+        $this->output->setModel(new %%ModelClassName%%());
+
+        $presenter->present($this->output);
+    }
+
+}

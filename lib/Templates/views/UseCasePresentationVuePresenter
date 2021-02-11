@@ -1,0 +1,33 @@
+<?php
+
+namespace %%namespace%%;
+
+use %%UseCaseOutputClassNamespaceUse%%;
+use %%ViewModelFactoryClassNamespaceUse%%;
+
+class %%ClassName%% implements %%PresenterContratcClassName%%
+{
+
+    private $viewModel;
+
+    /**
+     * @param %%UseCaseOutputClassName%% $output
+     */
+    public function present(%%UseCaseOutputClassName%% $output): void
+    {
+        $model = $output->getModel();
+
+        $this->viewModel = new %%VueViewModelClassName%%();
+
+        $this->viewModel->viewModel = %%ViewModelFactoryClassName%%::getViewModel($model);
+    }
+
+    /**
+     * @return %%VueViewModelClassName%%
+     */
+    public function getViewModel(): %%VueViewModelClassName%%
+    {
+        return $this->viewModel;
+    }
+
+}

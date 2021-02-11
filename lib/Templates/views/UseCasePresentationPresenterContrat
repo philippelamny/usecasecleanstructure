@@ -1,0 +1,11 @@
+<?php
+
+namespace %%namespace%%;
+
+use %%UseCaseOutputClassNamespaceUse%%;
+
+interface %%ClassName%%
+{
+
+    public function present(%%UseCaseOutputClassName%% $output): void;
+}

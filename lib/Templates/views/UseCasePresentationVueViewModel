@@ -1,0 +1,12 @@
+<?php
+
+namespace %%namespace%%;
+
+use %%ViewModelClassNamespaceUse%%;
+
+class %%ClassName%%
+{
+    /** @var %%ViewModelClassName%% */
+    public $viewModel;
+
+}
